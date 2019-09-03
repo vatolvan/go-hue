@@ -6,11 +6,13 @@ import (
 	"html"
 	"log"
 	"net/http"
+	"strconv"
 
+	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 )
 
-func lights(w http.ResponseWriter, r *http.Request) {
+func lightsHandler(w http.ResponseWriter, r *http.Request) {
 	lights := getLights()
 
 	js, err := json.Marshal(lights)
@@ -21,6 +23,43 @@ func lights(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(js)
+}
+
+func lightHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	light := getLight(id)
+
+	js, err := json.Marshal(light)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
+}
+
+func lightSetHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var request HueLightState
+	err = json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	setLight(id, request)
+	w.WriteHeader(200)
 }
 
 func readConfig() {
@@ -40,7 +79,12 @@ func healthCheck(w http.ResponseWriter, r *http.Request) {
 func main() {
 	readConfig()
 
-	http.HandleFunc("/lights", lights)
-	http.HandleFunc("/healthcheck", healthCheck)
+	r := mux.NewRouter()
+	r.HandleFunc("/healthcheck", healthCheck).Methods("GET")
+	r.HandleFunc("/lights/{id}", lightHandler).Methods("GET")
+	r.HandleFunc("/lights/{id}", lightSetHandler).Methods("PUT")
+	r.HandleFunc("/lights", lightsHandler).Methods("GET")
+	http.Handle("/", r)
+
 	log.Fatal(http.ListenAndServe(":"+viper.GetString("PORT"), nil))
 }
