@@ -12,7 +12,11 @@ import (
 	"github.com/spf13/viper"
 )
 
-var httpClient = &http.Client{Timeout: 10 * time.Second}
+// HueClient Handles the Hue system communication
+type HueClient struct {
+	BaseURL    string
+	HTTPClient *http.Client
+}
 
 // Light Describes the light returned from Hue Bridge
 type Light struct {
@@ -53,8 +57,13 @@ func hueBaseURL() string {
 	return fmt.Sprintf("http://%s/api/%s", hueBridgeIP, username)
 }
 
-func getLights() []Light {
-	URL := fmt.Sprintf("%s/lights", hueBaseURL())
+var defaultHTTPClient = &http.Client{Timeout: 10 * time.Second}
+
+// GetLights Return lights in the Hue system
+func (c *HueClient) GetLights() []Light {
+	httpClient, baseURL := c.getHTTPClient()
+
+	URL := fmt.Sprintf("%s/lights", baseURL)
 	response, err := httpClient.Get(URL)
 
 	if err != nil {
@@ -88,9 +97,11 @@ func getLights() []Light {
 	return lights
 }
 
-func getLight(id int) Light {
-	URL := fmt.Sprintf("%s/lights/%d", hueBaseURL(), id)
-	fmt.Println(URL)
+// GetLight Return Status of the light with specified id
+func (c *HueClient) GetLight(id int) Light {
+	httpClient, baseURL := c.getHTTPClient()
+
+	URL := fmt.Sprintf("%s/lights/%d", baseURL, id)
 	response, err := httpClient.Get(URL)
 
 	if err != nil {
@@ -111,8 +122,11 @@ func getLight(id int) Light {
 	}
 }
 
-func setLight(id int, state HueLightState) {
-	URL := fmt.Sprintf("%s/lights/%d/state", hueBaseURL(), id)
+// SetLight Sets the state of a Hue light with specified id
+func (c *HueClient) SetLight(id int, state HueLightState) {
+	httpClient, baseURL := c.getHTTPClient()
+
+	URL := fmt.Sprintf("%s/lights/%d/state", baseURL, id)
 
 	requestBody, err := json.Marshal(state)
 	if err != nil {
@@ -128,4 +142,18 @@ func setLight(id int, state HueLightState) {
 	if err != nil {
 		log.Fatal("failed to set Hue state: ", err)
 	}
+}
+
+func (c *HueClient) getHTTPClient() (*http.Client, string) {
+	httpClient := c.HTTPClient
+	if httpClient == nil {
+		httpClient = defaultHTTPClient
+	}
+
+	baseURL := c.BaseURL
+	if baseURL == "" {
+		baseURL = hueBaseURL()
+	}
+
+	return httpClient, baseURL
 }

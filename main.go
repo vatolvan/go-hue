@@ -12,8 +12,10 @@ import (
 	"github.com/spf13/viper"
 )
 
+var hueClient = HueClient{}
+
 func lightsHandler(w http.ResponseWriter, r *http.Request) {
-	lights := getLights()
+	lights := hueClient.GetLights()
 
 	js, err := json.Marshal(lights)
 	if err != nil {
@@ -33,7 +35,7 @@ func lightHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	light := getLight(id)
+	light := hueClient.GetLight(id)
 
 	js, err := json.Marshal(light)
 	if err != nil {
@@ -58,7 +60,7 @@ func lightSetHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	setLight(id, request)
+	hueClient.SetLight(id, request)
 	w.WriteHeader(200)
 }
 
