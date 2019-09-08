@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/vatolvan/go-hue/tree/master.svg?style=svg)](https://circleci.com/gh/vatolvan/go-hue/tree/master)
+
 # go-hue
 Hue light switcher with Go
 
