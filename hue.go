@@ -33,20 +33,6 @@ type HueLight struct {
 
 // HueLightState Describes the state of the Hue Light
 type HueLightState struct {
-	// "on": false,
-	// "bri": 254,
-	// "hue": 8402,
-	// "sat": 140,
-	// "effect": "none",
-	// "xy": [
-	// 	0.4575,
-	// 	0.4099
-	// ],
-	// "ct": 366,
-	// "alert": "select",
-	// "colormode": "xy",
-	// "mode": "homeautomation",
-	// "reachable": true
 	On         bool `json:"on"`
 	Brightness int  `json:"bri"`
 }
